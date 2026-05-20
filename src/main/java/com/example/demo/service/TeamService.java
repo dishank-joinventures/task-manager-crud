@@ -33,7 +33,7 @@ public class TeamService{
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
         Team team = new Team();
-        team.setTeamName(team.getTeamName());
+        team.setTeamName(dto.getTeamName());
         team.setUser(user);
         return team;
     }
@@ -46,6 +46,13 @@ public class TeamService{
     // READ ALL
     public List<TeamResponseDTO> getAllTeams() {
         return teamRepository.findAll()
+                .stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<TeamResponseDTO> getAllTeamsWithUsers() {
+        return teamRepository.findAllWithUsers()
                 .stream()
                 .map(this::toResponseDTO)
                 .collect(Collectors.toList());
@@ -83,6 +90,20 @@ public class TeamService{
             throw new RuntimeException("Team not found with id: " + id);
         }
         teamRepository.deleteById(id);
+    }
+
+    public List<TeamResponseDTO> searchTeamsByName(String teamName) {
+        return teamRepository.findByTeamNameContainingIgnoreCase(teamName)
+                .stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<TeamResponseDTO> getTeamsByUserName(String userName) {
+        return teamRepository.findByUserName(userName)
+                .stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
     }
 }
 

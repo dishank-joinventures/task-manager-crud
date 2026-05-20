@@ -1,10 +1,11 @@
-package com.example.demo.services;
+package com.example.demo.service;
 
 import com.example.demo.model.User;
 import com.example.demo.dto.UserRequestDTO;
 import com.example.demo.dto.UserResponseDTO;
 import com.example.demo.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,6 +16,9 @@ public class UserService {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;  // ← added for hashing
 
     // Map Entity → ResponseDTO
     private UserResponseDTO toResponseDTO(User user) {
@@ -30,7 +34,7 @@ public class UserService {
         User user = new User();
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));  // ← hashed
         return user;
     }
 
@@ -55,13 +59,21 @@ public class UserService {
         return toResponseDTO(user);
     }
 
+    // SEARCH BY NAME — GET /api/users/search?name=john
+    public List<UserResponseDTO> searchUsersByName(String name) {
+        return userRepository.findByNameContainingIgnoreCase(name)
+                .stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
     // UPDATE
     public UserResponseDTO updateUser(Long id, UserRequestDTO dto) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword());
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));  // ← hashed on update too
         return toResponseDTO(userRepository.save(user));
     }
 

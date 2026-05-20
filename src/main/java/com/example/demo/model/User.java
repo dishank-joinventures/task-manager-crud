@@ -20,5 +20,11 @@ public class User {
 
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Task> tasks;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Team> teams;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<RefreshToken> refreshTokens;
 }

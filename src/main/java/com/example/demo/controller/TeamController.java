@@ -28,6 +28,11 @@ public class TeamController {
         return ResponseEntity.ok(teamService.getAllTeams());
     }
 
+    @GetMapping("/all-with-users")
+    public ResponseEntity<List<TeamResponseDTO>> getAllTeamsWithUsers() {
+        return ResponseEntity.ok(teamService.getAllTeamsWithUsers());
+    }
+
     // GET /api/teams/{id}
     @GetMapping("/{id}")
     public ResponseEntity<TeamResponseDTO> getTeamById(@PathVariable Long id) {
@@ -53,5 +58,15 @@ public class TeamController {
     public ResponseEntity<Void> deleteTeam(@PathVariable Long id) {
         teamService.deleteTeam(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/search")
+    public ResponseEntity<List<TeamResponseDTO>> searchTeamsByName(@RequestParam String teamName) {
+        return ResponseEntity.ok(teamService.searchTeamsByName(teamName));
+    }
+
+    @GetMapping("/filter")
+    public ResponseEntity<List<TeamResponseDTO>> getTeamsByUserName(@RequestParam String userName) {
+        return ResponseEntity.ok(teamService.getTeamsByUserName(userName));
     }
 }
