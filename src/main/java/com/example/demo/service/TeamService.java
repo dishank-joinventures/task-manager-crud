@@ -1,0 +1,89 @@
+package com.example.demo.services;
+
+import com.example.demo.dto.TeamRequestDTO;
+import com.example.demo.dto.TeamResponseDTO;
+import com.example.demo.model.Team;
+import com.example.demo.model.User;
+import com.example.demo.repository.TeamRepository;
+import com.example.demo.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+public class TeamService{
+    @Autowired
+    private TeamRepository teamRepository;
+    @Autowired
+    private UserRepository userRepository;
+    private TeamResponseDTO toResponseDTO (Team team)
+    {
+        TeamResponseDTO dto=new TeamResponseDTO();
+        dto.setTeamId(team.getTeamId());
+        dto.setTeamName(team.getTeamName());
+        dto.setUserId(team.getUser().getUserId());
+        dto.setUserName(team.getUser().getName());
+        return dto;
+    }
+
+    private Team toEntity(TeamRequestDTO dto)
+    {
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
+        Team team = new Team();
+        team.setTeamName(team.getTeamName());
+        team.setUser(user);
+        return team;
+    }
+
+    public TeamResponseDTO createTeam(TeamRequestDTO dto)
+    {
+        return toResponseDTO(teamRepository.save(toEntity(dto)));
+    }
+
+    // READ ALL
+    public List<TeamResponseDTO> getAllTeams() {
+        return teamRepository.findAll()
+                .stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    // READ ONE
+    public TeamResponseDTO getTeamById(Long id) {
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Team not found with id: " + id));
+        return toResponseDTO(team);
+    }
+
+    // READ ALL TEAMS FOR A USER
+    public List<TeamResponseDTO> getTeamsByUserId(Long userId) {
+        return teamRepository.findByUserUserId(userId)
+                .stream()
+                .map(this::toResponseDTO)
+                .collect(Collectors.toList());
+    }
+
+    // UPDATE
+    public TeamResponseDTO updateTeam(Long id, TeamRequestDTO dto) {
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Team not found with id: " + id));
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
+        team.setTeamName(dto.getTeamName());
+        team.setUser(user);
+        return toResponseDTO(teamRepository.save(team));
+    }
+
+    // DELETE
+    public void deleteTeam(Long id) {
+        if (!teamRepository.existsById(id)) {
+            throw new RuntimeException("Team not found with id: " + id);
+        }
+        teamRepository.deleteById(id);
+    }
+}
+
+
