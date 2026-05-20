@@ -31,3 +31,17 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Local environment / secrets ###
+.env
+.env.*
+*.log
+
+### JetBrains local datasource metadata ###
+dataSources.xml
+data_sources_history.xml
+misc.xml
+c5d4de2f-407b-4ab9-b381-a9543d982969.xml
+
+### Maven wrapper metadata (if generated outside .mvn/wrapper) ###
+maven-wrapper.properties
