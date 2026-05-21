@@ -36,6 +36,7 @@ build/
 .env
 .env.*
 *.log
+src/main/resources/application.properties
 
 ### JetBrains local datasource metadata ###
 dataSources.xml
