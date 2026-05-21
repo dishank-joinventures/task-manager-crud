@@ -1,6 +1,7 @@
 package com.example.demo.security;
 
 import com.example.demo.model.RefreshToken;
+import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.RefreshTokenService;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -41,6 +42,15 @@ public class JwtFilter extends OncePerRequestFilter {
     }
 
     @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        return path.equals("/api/auth/register")
+                || path.equals("/api/auth/login")
+                || path.equals("/api/auth/refresh")
+                || "/error".equals(path);
+    }
+
+    @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         String authHeader = request.getHeader(HttpHeaders.AUTHORIZATION);
@@ -56,9 +66,14 @@ public class JwtFilter extends OncePerRequestFilter {
 
         if (accessToken != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
-                String email = jwtService.extractEmail(accessToken);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                if (jwtService.isTokenValid(accessToken, userDetails.getUsername())) {
+                Long userId = Long.valueOf(jwtService.extractSubject(accessToken));
+                User user = userRepository.findById(userId).orElse(null);
+                if (user != null && jwtService.isTokenValid(accessToken, String.valueOf(user.getUserId()))) {
+                    UserDetails userDetails = org.springframework.security.core.userdetails.User
+                            .withUsername(user.getEmail())
+                            .password(user.getPassword())
+                            .authorities("USER")
+                            .build();
                     setAuthentication(userDetails);
                     filterChain.doFilter(request, response);
                     return;
@@ -73,30 +88,25 @@ public class JwtFilter extends OncePerRequestFilter {
         if (refreshToken != null && SecurityContextHolder.getContext().getAuthentication() == null) {
             try {
                 RefreshToken rotated = refreshTokenService.rotateRefreshToken(refreshToken);
-                String email = rotated.getUser().getEmail();
-                if (userRepository.findByEmail(email).isEmpty()) {
-                    response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
-                    return;
-                }
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
-                String newAccessToken = jwtService.generateAccessToken(email);
+                User user = rotated.getUser();
+                UserDetails userDetails = org.springframework.security.core.userdetails.User
+                        .withUsername(user.getEmail())
+                        .password(user.getPassword())
+                        .authorities("USER")
+                        .build();
+                String newAccessToken = jwtService.generateAccessToken(user.getUserId());
                 setAuthentication(userDetails);
                 addTokenCookie(response, "accessToken", newAccessToken, 15 * 60);
                 addTokenCookie(response, "refreshToken", rotated.getToken(), 7 * 24 * 60 * 60);
                 filterChain.doFilter(request, response);
                 return;
             } catch (RuntimeException ex) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                filterChain.doFilter(request, response);
                 return;
             }
         }
 
-        if (request.getRequestURI().startsWith("/api/auth/")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+        filterChain.doFilter(request, response);
     }
 
     private void setAuthentication(UserDetails userDetails) {

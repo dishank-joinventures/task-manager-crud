@@ -7,6 +7,8 @@ import com.example.demo.dto.UserRequestDTO;
 import com.example.demo.service.AuthService;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import org.springframework.security.core.Authentication;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
@@ -23,13 +25,13 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponseDTO> register(@RequestBody UserRequestDTO request) {
+    public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody UserRequestDTO request) {
         AuthResponseDTO response = authService.register(request);
         return withTokenCookies(response);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@RequestBody AuthRequestDTO request) {
+    public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody AuthRequestDTO request) {
         AuthResponseDTO response = authService.login(request);
         return withTokenCookies(response);
     }
@@ -48,19 +50,12 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(
-            @RequestBody(required = false) RefreshRequestDTO request,
-            HttpServletRequest httpRequest
-    ) {
-        String refreshToken = getCookieValue(httpRequest, "refreshToken");
-        if ((refreshToken == null || refreshToken.isBlank()) && request != null) {
-            refreshToken = request.getRefreshToken();
-        }
-        authService.logout(refreshToken);
-        return ResponseEntity.noContent()
+    public ResponseEntity<String> logout(Authentication authentication) {
+        authService.logout(authentication);
+        return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, clearCookie("accessToken").toString())
                 .header(HttpHeaders.SET_COOKIE, clearCookie("refreshToken").toString())
-                .build();
+                .body("Logged out successfully");
     }
 
     private ResponseEntity<AuthResponseDTO> withTokenCookies(AuthResponseDTO response) {

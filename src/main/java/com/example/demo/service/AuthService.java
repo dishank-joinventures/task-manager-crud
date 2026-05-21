@@ -7,8 +7,11 @@ import com.example.demo.model.RefreshToken;
 import com.example.demo.model.User;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtService;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.core.Authentication;
 
 @Service
 public class AuthService {
@@ -32,7 +35,7 @@ public class AuthService {
 
     public AuthResponseDTO register(UserRequestDTO request) {
         userRepository.findByEmail(request.getEmail()).ifPresent(u -> {
-            throw new RuntimeException("Email already registered");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Email already in use");
         });
         User user = new User();
         user.setName(request.getName());
@@ -45,9 +48,9 @@ public class AuthService {
 
     public AuthResponseDTO login(AuthRequestDTO request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bad credentials"));
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid credentials");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Bad credentials");
         }
         refreshTokenService.deleteByUser(user);
         RefreshToken refreshToken = refreshTokenService.createRefreshToken(user);
@@ -59,16 +62,17 @@ public class AuthService {
         return buildAuthResponse(newToken.getUser(), newToken.getToken());
     }
 
-    public void logout(String refreshToken) {
-        if (refreshToken == null || refreshToken.isBlank()) {
-            return;
+    public void logout(Authentication authentication) {
+        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized");
         }
-        RefreshToken token = refreshTokenService.getValidRefreshToken(refreshToken);
-        refreshTokenService.deleteByUser(token.getUser());
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthorized"));
+        refreshTokenService.deleteByUser(user);
     }
 
     public AuthResponseDTO buildAuthResponse(User user, String refreshToken) {
-        String accessToken = jwtService.generateAccessToken(user.getEmail());
+        String accessToken = jwtService.generateAccessToken(user.getUserId());
         return new AuthResponseDTO(accessToken, refreshToken, user.getEmail(), user.getName());
     }
 }

@@ -11,6 +11,7 @@ import java.security.Key;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
 @Service
@@ -22,17 +23,17 @@ public class JwtService {
     @Value("${jwt.access-token-expiry}")
     private long accessTokenExpiry;
 
-    public String generateAccessToken(String email) {
-        return generateToken(Map.of(), email, accessTokenExpiry);
+    public String generateAccessToken(Long userId) {
+        return generateToken(Map.of(), String.valueOf(userId), accessTokenExpiry);
     }
 
-    public String extractEmail(String token) {
+    public String extractSubject(String token) {
         return extractClaim(token, Claims::getSubject);
     }
 
-    public boolean isTokenValid(String token, String email) {
-        String extractedEmail = extractEmail(token);
-        return extractedEmail.equals(email) && !isTokenExpired(token);
+    public boolean isTokenValid(String token, String subject) {
+        String extractedSubject = extractSubject(token);
+        return extractedSubject.equals(subject) && !isTokenExpired(token);
     }
 
     private String generateToken(Map<String, Object> claims, String subject, long expiryMs) {
@@ -43,6 +44,7 @@ public class JwtService {
                 .setSubject(subject)
                 .setIssuedAt(now)
                 .setExpiration(expiry)
+                .setId(UUID.randomUUID().toString())
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
     }

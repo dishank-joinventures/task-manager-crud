@@ -6,6 +6,7 @@ import com.example.demo.services.TeamService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -18,7 +19,7 @@ public class TeamController {
 
     // POST /api/teams
     @PostMapping
-    public ResponseEntity<TeamResponseDTO> createTeam(@RequestBody TeamRequestDTO request) {
+    public ResponseEntity<TeamResponseDTO> createTeam(@Valid @RequestBody TeamRequestDTO request) {
         return ResponseEntity.ok(teamService.createTeam(request));
     }
 
@@ -34,7 +35,7 @@ public class TeamController {
     }
 
     // GET /api/teams/{id}
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9]+}")
     public ResponseEntity<TeamResponseDTO> getTeamById(@PathVariable Long id) {
         return ResponseEntity.ok(teamService.getTeamById(id));
     }
@@ -46,15 +47,15 @@ public class TeamController {
     }
 
     // PUT /api/teams/{id}
-    @PutMapping("/{id}")
+    @PutMapping("/{id:[0-9]+}")
     public ResponseEntity<TeamResponseDTO> updateTeam(
             @PathVariable Long id,
-            @RequestBody TeamRequestDTO request) {
+            @Valid @RequestBody TeamRequestDTO request) {
         return ResponseEntity.ok(teamService.updateTeam(id, request));
     }
 
     // DELETE /api/teams/{id}
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:[0-9]+}")
     public ResponseEntity<Void> deleteTeam(@PathVariable Long id) {
         teamService.deleteTeam(id);
         return ResponseEntity.noContent().build();

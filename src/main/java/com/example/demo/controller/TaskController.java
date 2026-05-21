@@ -6,6 +6,7 @@ import com.example.demo.service.TaskService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -18,7 +19,7 @@ public class TaskController {
 
     // POST /api/tasks
     @PostMapping
-    public ResponseEntity<TaskResponseDTO> createTask(@RequestBody TaskRequestDTO request) {
+    public ResponseEntity<TaskResponseDTO> createTask(@Valid @RequestBody TaskRequestDTO request) {
         return ResponseEntity.ok(taskService.createTask(request));
     }
 
@@ -29,7 +30,7 @@ public class TaskController {
     }
 
     // GET /api/tasks/{id}
-    @GetMapping("/{id}")
+    @GetMapping("/{id:[0-9]+}")
     public ResponseEntity<TaskResponseDTO> getTaskById(@PathVariable Long id) {
         return ResponseEntity.ok(taskService.getTaskById(id));
     }
@@ -47,15 +48,15 @@ public class TaskController {
     }
 
     // PUT /api/tasks/{id}
-    @PutMapping("/{id}")
+    @PutMapping("/{id:[0-9]+}")
     public ResponseEntity<TaskResponseDTO> updateTask(
             @PathVariable Long id,
-            @RequestBody TaskRequestDTO request) {
+            @Valid @RequestBody TaskRequestDTO request) {
         return ResponseEntity.ok(taskService.updateTask(id, request));
     }
 
     // DELETE /api/tasks/{id}
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id:[0-9]+}")
     public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
         taskService.deleteTask(id);
         return ResponseEntity.noContent().build();

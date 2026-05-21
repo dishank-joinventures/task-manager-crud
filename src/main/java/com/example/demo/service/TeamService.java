@@ -6,8 +6,10 @@ import com.example.demo.model.Team;
 import com.example.demo.model.User;
 import com.example.demo.repository.TeamRepository;
 import com.example.demo.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,7 +33,7 @@ public class TeamService{
     private Team toEntity(TeamRequestDTO dto)
     {
         User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id: " + dto.getUserId()));
         Team team = new Team();
         team.setTeamName(dto.getTeamName());
         team.setUser(user);
@@ -61,7 +63,7 @@ public class TeamService{
     // READ ONE
     public TeamResponseDTO getTeamById(Long id) {
         Team team = teamRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Team not found with id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Team not found with id: " + id));
         return toResponseDTO(team);
     }
 
@@ -76,9 +78,9 @@ public class TeamService{
     // UPDATE
     public TeamResponseDTO updateTeam(Long id, TeamRequestDTO dto) {
         Team team = teamRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Team not found with id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Team not found with id: " + id));
         User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id: " + dto.getUserId()));
         team.setTeamName(dto.getTeamName());
         team.setUser(user);
         return toResponseDTO(teamRepository.save(team));
@@ -87,7 +89,7 @@ public class TeamService{
     // DELETE
     public void deleteTeam(Long id) {
         if (!teamRepository.existsById(id)) {
-            throw new RuntimeException("Team not found with id: " + id);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Team not found with id: " + id);
         }
         teamRepository.deleteById(id);
     }

@@ -6,8 +6,10 @@ import com.example.demo.model.Task;
 import com.example.demo.model.User;
 import com.example.demo.repository.TaskRepository;
 import com.example.demo.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,7 +39,7 @@ public class TaskService {
     // RequestDTO → Entity
     private Task toEntity(TaskRequestDTO dto) {
         User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id: " + dto.getUserId()));
         Task task = new Task();
         task.setTaskName(dto.getTaskName());
         task.setTaskStatus(dto.getTaskStatus());
@@ -62,7 +64,7 @@ public class TaskService {
     // READ ONE
     public TaskResponseDTO getTaskById(Long id) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found with id: " + id));
         return toResponseDTO(task);
     }
 
@@ -85,9 +87,9 @@ public class TaskService {
     // UPDATE
     public TaskResponseDTO updateTask(Long id, TaskRequestDTO dto) {
         Task task = taskRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Task not found with id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found with id: " + id));
         User user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + dto.getUserId()));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id: " + dto.getUserId()));
         task.setTaskName(dto.getTaskName());
         task.setTaskStatus(dto.getTaskStatus());
         task.setTaskDueDate(dto.getTaskDueDate());
@@ -98,7 +100,7 @@ public class TaskService {
     // DELETE
     public void deleteTask(Long id) {
         if (!taskRepository.existsById(id)) {
-            throw new RuntimeException("Task not found with id: " + id);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found with id: " + id);
         }
         taskRepository.deleteById(id);
     }

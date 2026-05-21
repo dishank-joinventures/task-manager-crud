@@ -4,9 +4,11 @@ import com.example.demo.model.User;
 import com.example.demo.dto.UserRequestDTO;
 import com.example.demo.dto.UserResponseDTO;
 import com.example.demo.repository.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -40,6 +42,9 @@ public class UserService {
 
     // CREATE
     public UserResponseDTO createUser(UserRequestDTO dto) {
+        userRepository.findByEmail(dto.getEmail()).ifPresent(user -> {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Email already in use");
+        });
         User saved = userRepository.save(toEntity(dto));
         return toResponseDTO(saved);
     }
@@ -55,7 +60,7 @@ public class UserService {
     // READ ONE
     public UserResponseDTO getUserById(Long id) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id: " + id));
         return toResponseDTO(user);
     }
 
@@ -70,7 +75,12 @@ public class UserService {
     // UPDATE
     public UserResponseDTO updateUser(Long id, UserRequestDTO dto) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id: " + id));
+        userRepository.findByEmail(dto.getEmail())
+                .filter(existing -> !existing.getUserId().equals(id))
+                .ifPresent(existing -> {
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Email already in use");
+                });
         user.setName(dto.getName());
         user.setEmail(dto.getEmail());
         user.setPassword(passwordEncoder.encode(dto.getPassword()));  // ← hashed on update too
@@ -80,7 +90,7 @@ public class UserService {
     // DELETE
     public void deleteUser(Long id) {
         if (!userRepository.existsById(id)) {
-            throw new RuntimeException("User not found with id: " + id);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found with id: " + id);
         }
         userRepository.deleteById(id);
     }
